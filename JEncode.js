@@ -97,32 +97,39 @@ JEncode = (function() {
         For widths > 32 need to convert to use byte array for crc
         and operate one byte at a time.
     */
-    var crc = function( width, poly, data, init, reverse ) {
-    
-        var len = data.length;
+    var crc = function( options ) {
+        
+        if( !(options.width && options.poly) )
+            throw new Error("Invalid options");
+        
+        var len = options.data ? options.data.length : 0;
+        
         // Used to mask off any bits to the left of *width*
-        var mask = (0xFFFFFFFF >>> (32 - width));
+        var mask = (0xFFFFFFFF >>> (32 - options.width));
+        
         // If there's an initial value, mask and set initial CRC
-        var crc = typeof init != 'undefined' ? (init & mask) : (0xFFFFFFFF & mask);
-        console.log( (crc >>> 0).toString(16) );
+        var crc = options.hasOwnProperty('init') ? (options.init & mask) : (0xFFFFFFFF & mask);
         var c, i, j;
         
         for(i = 0; i < len; i++) {
         
-            c = data.charCodeAt(i);
-            if( reverse )
+            c = options.data.charCodeAt(i);
+            if( options.revData )
                 c = revbits(c, 8);
-            c <<= (width - 8);
+            c <<= (options.width - 8);
             
             for(j = 0; j < 8; j++) {
             
-                crc = ((crc ^ c) & (1 << (width -1))) ? (crc << 1) ^ poly : crc << 1;
+                crc = ((crc ^ c) & (1 << (options.width -1))) ? (crc << 1) ^ options.poly : crc << 1;
                 crc &= mask;
                 c <<= 1;
             }
         }
-
-        return (crc >>> 0).toString(16);
+        
+        if( options.revCrc )
+            crc = revbits(crc, options.width);
+        
+        return ((crc ^ (options.xor || 0)) >>> 0).toString(16);
     };
     
     /*
@@ -130,43 +137,85 @@ JEncode = (function() {
     */
     var crc32 = function( data ) {
     
-        return crc(32, 0x4C11DB7, data, 0xFFFFFFFF, true);
+        var options = {
+            width: 32,
+             poly: 0x4C11DB7,
+             data: data,
+             init: 0xFFFFFFFF,
+          revData: true,
+           revCrc: true,
+              xor: 0xFFFFFFFF
+        };
+        
+        return crc( options );
     };
     
     /*
         Standard CRC-CCITT
     */
     var crc_ccitt = function( data ) {
-    
-        return crc(16, 0x1021, data, 0xFFFF, false);
+        
+        var options = {
+            width: 16,
+             poly: 0x1021,
+             data: data,
+             init: 0xFFFF,
+          revData: false,
+           revCrc: false,
+              xor: 0x0000
+        };
+        
+        return crc( options );
     };
     
     /*
         Standard CRC16
     */
     var crc16 = function( data ) {
-    
-        return crc(16, 0x8005, data, 0xFFFF, true);
+        
+        var options = {
+            width: 16,
+             poly: 0x8005,
+             data: data,
+             init: 0xFFFF,
+          revData: true,
+           revCrc: true,
+              xor: 0x0000
+        };
+        
+        return crc( options );
     };
     
     /* 
         Private
-        Reverse/reflect the bits. Used by generic CRC function.
+        Reverse the bits. Used by generic CRC function.
     */
-    function revbits( data, bits ) {
+    function revbits( data, width ) {
     
-    var reverse = 0;
-    var i;
+        var reverse = 0;
+        var i;
     
-    for(i = 0; i < bits; i++)
-    {
-        reverse <<= 1;
-        if(data & 0x1) reverse++;
-        data >>= 1;
+        for(i = 0; i < width; i++)
+        {
+            reverse <<= 1;
+            if(data & 0x1) reverse++;
+            data >>= 1;
+        }
+    
+        return reverse;
     }
     
-    return reverse;
-}
+    /*
+        Reciprocal of polynomial.
+        Ends up being the reverse, left-shifted by 1 and 
+        then tack on the + 1 since we shifted off
+        
+    */
+    function recip( poly, width ) {
+        
+        // The reciprocal polynomial 
+        return ((revbits( poly, width ) << 1 & (0xFFFFFFFF >>> (32 - width)) ) + 1);
+    }
     
     return {
         encode64: encode64,
@@ -177,104 +226,3 @@ JEncode = (function() {
              crc: crc
     };
 })();
-
-/*
- var crc32 = function( data ) {
-    
-        var len = data.length;
-        var crc = 0xFFFFFFFF;
-        var c, i, j, bit;
-        
-        for(i = 0; i < len; i++) {
-            
-            c = data.charCodeAt(i);
-            //c = revbits(c,8);
-            c <<= 24;            
-            
-            for(j = 0; j < 8; j++) {
-                
-                crc = ((crc ^ c) & (1 << 31)) ? (crc << 1) ^ 0x4C11DB7 : crc << 1;
-                c <<= 1;
-            }
-        }
-        return (crc >>> 0).toString(16);
-    };
-
-function pad_crc16(msg) {
-    
-    msg = msg.concat("\x00\x00");
-    var len = msg.length;
-    var crc = 0xFFFF;
-    var poly = 0x1021;
-    var i, j, bit;
-    
-    for(i = 0; i < len; i++)
-    {
-        ch = msg.charCodeAt(i);
-        t = 0x80;
-        
-        for(j = 0; j < 8; j++)
-        {
-            bit = (crc & 0x8000);
-            
-            crc <<= 1;
-            crc &= 0xFFFF;
-            
-            if(ch & t) crc += 1;
-            t >>= 1;
-            
-            if( bit ) crc ^= poly;
-        }       
-    }
-    
-    return Number(crc).toString(16);
-}
-
-
-function crc16(msg) {
-    
-    var len = msg.length;
-    var crc = 0xFFFF;
-    var poly = 0x1021;
-    var i, j, bit;
-    
-    for(i = 0; i < len; i++)
-    {
-        ch = msg.charCodeAt(i);
-        ch = revbits(ch,8);
-        ch <<= 8;
-        ch &= 0xFFFF;
-        
-        for(j = 0; j < 8; j++)
-        {
-            
-            bit = ((crc ^ ch) & 0x8000);
-            
-            crc <<= 1;
-            crc &= 0xFFFF;
-            
-            if( bit ) crc ^= poly;
-            
-            ch <<= 1;
-            ch &= 0xFFFF;
-        }       
-    }
-    
-    return revbits(crc,16).toString(16);
-}
-
-function revbits( data, bits ) {
-    
-    var reverse = 0;
-    var i;
-    
-    for(i = 0; i < bits; i++)
-    {
-        reverse <<= 1;
-        if(data & 0x1) reverse++;
-        data >>= 1;
-    }
-    
-    return reverse;
-}
-*/

@@ -230,7 +230,7 @@ JEncode = (function() {
     
     /*
      * Return an object to expose the public
-     * functions/properties.
+     * functions and properties.
      * 
      */
     return {

@@ -15,7 +15,10 @@ JEncode = (function() {
     // Base64 character array
     var repStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     
-    // Base64 encode 
+    /*
+     * Public
+     * Base64 encode
+     */ 
     var encode64 = function( data ) {
     
         var c1, c2, c3, e1, e2, e3, e4;
@@ -61,6 +64,11 @@ JEncode = (function() {
         return out;    
     };
     
+    
+    /*
+     * Public
+     * Base64 decode
+     */ 
     var decode64 = function( data ) {
     
         var c1, c2, c3, e1, e2, e3, e4;
@@ -92,11 +100,11 @@ JEncode = (function() {
     };
     
     /*
-        Public
-        CRC function for varying widths up to 32 bits.
-        For widths > 32 need to convert to use byte array for crc
-        and operate one byte at a time.
-    */
+     *  Public
+     *  CRC function for varying widths up to 32 bits.
+     *  For widths > 32 need to convert to use byte array for crc
+     *  and operate one byte at a time.
+     */
     var crc = function( options ) {
         
         if( !(options.width && options.poly) )
@@ -133,8 +141,9 @@ JEncode = (function() {
     };
     
     /*
-        Standard CRC32 function
-    */
+     * Public
+     * Standard CRC32 function
+     */
     var crc32 = function( data ) {
     
         var options = {
@@ -151,8 +160,9 @@ JEncode = (function() {
     };
     
     /*
-        Standard CRC-CCITT
-    */
+     * Public
+     * Standard CRC-CCITT
+     */
     var crc_ccitt = function( data ) {
         
         var options = {
@@ -169,8 +179,9 @@ JEncode = (function() {
     };
     
     /*
-        Standard CRC16
-    */
+     * Public
+     * Standard CRC16
+     */
     var crc16 = function( data ) {
         
         var options = {
@@ -186,10 +197,10 @@ JEncode = (function() {
         return crc( options );
     };
     
-    /* 
-        Private
-        Reverse the bits. Used by generic CRC function.
-    */
+    /*
+     * Private
+     * Reverse the bits. Used by generic CRC function.
+     */
     function revbits( data, width ) {
     
         var reverse = 0;
@@ -206,17 +217,22 @@ JEncode = (function() {
     }
     
     /*
-        Reciprocal of polynomial.
-        Ends up being the reverse, left-shifted by 1 and 
-        then tack on the + 1 since we shifted off
-        
-    */
+     * Reciprocal of polynomial.
+     * Ends up being the reverse, left-shifted by 1 and
+     * then tack on the + 1 since we shifted off        
+     */
     function recip( poly, width ) {
         
         // The reciprocal polynomial 
         return ((revbits( poly, width ) << 1 & (0xFFFFFFFF >>> (32 - width)) ) + 1);
     }
     
+    
+    /*
+     * Return an object to expose the public
+     * functions/properties.
+     * 
+     */
     return {
         encode64: encode64,
         decode64: decode64,

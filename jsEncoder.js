@@ -1,5 +1,5 @@
 
-JEncode = (function() {
+jsEncoder = (function() {
 
     /* 
         All of these functions currently use strings and charCodeAt

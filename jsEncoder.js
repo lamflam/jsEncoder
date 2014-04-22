@@ -292,31 +292,36 @@ var jsEncoder = (function() {
     //    In:: Integer
     //   Out:: Byte array representation
     //
-    var intToByteArray = function( int ) {
+    var intToByteArray = function( int, len ) {
         
-        var out = [];
+        var out = [], len = len || 0;
         
-        if( typeof int !== 'number' ) {
+        if ( typeof int !== 'number' ) {
             
             throw new Error( "TypeError - must be a number" );
         }
         
-        if( int > 0xFFFFFF ) {
+        if ( int > 0xFFFFFF ) {
             
             out.push( int >>> 24 );            
         }
         
-        if( int > 0xFFFF ) {
+        if ( int > 0xFFFF ) {
             
             out.push( (int >>> 16) & 0xFF );            
         }
         
-        if( int > 0xFF ) {
+        if ( int > 0xFF ) {
             
             out.push( (int >> 8) & 0xFF );            
         }
         
         out.push( int & 0xFF );
+        
+        while ( out.length < len ) {
+        
+            out.unshift( 0 );        
+        }            
         
         return out;
         

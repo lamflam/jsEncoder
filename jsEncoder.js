@@ -21,15 +21,18 @@ var jsEncoder = (function() {
     var encode64 = function( data ) {
     
         var c1, c2, c3, e1, e2, e3, e4,
-            i   = 0,
+            i = 0,
             out = "",
-            len = data.length,
-            rem = len % 3;
+            len,
+            rem;
         
         if( !isArray( data ) ) {
             
             throw new Error( "TypeError - Input must be an array" );
         }
+        
+        len = data.length;
+        rem = len % 3;
         
         //
         //  Pad with nulls until length is 
@@ -92,7 +95,7 @@ var jsEncoder = (function() {
         //  Make sure input length is a multiple of 4 and only contains
         //  valid characters
         //
-        if( typeof data !== 'string' || ( len % 4 !== 0 ) || !(/[A-Za-z0-9+=\/]+/).test( data ) )  {
+        if( typeof data !== 'string' || ( data.length % 4 !== 0 ) || !(/[A-Za-z0-9+=\/]+/).test( data ) )  {
             
             throw new Error( "Input not properly encoded" );            
         }

@@ -92,7 +92,7 @@ var jsEncoder = (function() {
         //  Make sure input length is a multiple of 4 and only contains
         //  valid characters
         //
-        if( typeof data !== 'string' || ( len % 4 !== 0 ) || (/[A-Za-z0-9+=\/]+/).test( data ) )  {
+        if( typeof data !== 'string' || ( len % 4 !== 0 ) || !(/[A-Za-z0-9+=\/]+/).test( data ) )  {
             
             throw new Error( "Input not properly encoded" );            
         }
